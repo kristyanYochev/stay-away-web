@@ -5,9 +5,7 @@ use futures_util::{StreamExt, FutureExt};
 
 #[tokio::main]
 async fn main() {
-    // let hello_world = warp::any().map(|| "Hello World");
-
-    let routes = warp::path("echo")
+    let ws_echo = warp::path("echo")
         .and(warp::ws())
         .map(|ws: warp::ws::Ws| {
             ws.on_upgrade(|websocket| {
@@ -19,6 +17,10 @@ async fn main() {
                 })
             })
         });
+
+    let routes = warp::get().and(
+        ws_echo
+    );
 
     warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
 }
