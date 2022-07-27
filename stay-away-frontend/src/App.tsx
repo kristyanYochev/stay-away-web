@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import Home from './pages/Home';
 
 function App() {
   const ws = useRef<WebSocket | null>(null);
@@ -20,15 +20,7 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <button onClick={sendWsMessage}>Test message</button>
-      </header>
-    </div>
+    <Home />
   );
 }
 
