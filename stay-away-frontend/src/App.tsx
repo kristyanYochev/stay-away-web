@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
 function App() {
+  const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:8080/echo");
+    socket.onopen = () => console.log("Socket open");
+    socket.onmessage = ({ data }) => console.log("Message received: " + data);
+
+    ws.current = socket;
+
+    return () => socket.close();
+  }, []);
+
+  const sendWsMessage = () => {
+    ws.current?.send("Test message, should echo");
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -10,14 +26,7 @@ function App() {
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <button onClick={sendWsMessage}>Test message</button>
       </header>
     </div>
   );
