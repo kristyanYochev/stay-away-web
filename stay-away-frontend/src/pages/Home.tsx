@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-const Lobbies: React.FC = ({ onCreateLobby }: { onCreateLobby: () => void }) => {
+interface LobbiesProps {
+  onCreateLobby?: () => void
+}
+
+const Lobbies: React.FC<LobbiesProps> = ({ onCreateLobby = () => {} }) => {
   return (
     <div>
       <button onClick={() => onCreateLobby()}>Create a lobby</button>
@@ -10,11 +14,17 @@ const Lobbies: React.FC = ({ onCreateLobby }: { onCreateLobby: () => void }) => 
 
 const Home: React.FC = () => {
   const [username, setUsername] = useState('');
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const onLogin: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault();
+    setLoggedIn(true);
+  }
 
   return (
     <>
       <h1>Home Page</h1>
-      <form>
+      <form onSubmit={onLogin}>
         <label htmlFor='username'>
           Your username:
           <br />
@@ -24,10 +34,12 @@ const Home: React.FC = () => {
             id='username'
             value={username}
             onChange={e => setUsername(e.target.value)}
+            disabled={loggedIn}
           />
         </label>
         <br />
         <button type='submit'>Login</button>
+        {loggedIn && <Lobbies />}
       </form>
     </>
   )
