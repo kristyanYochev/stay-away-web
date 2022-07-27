@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 
+const Lobbies: React.FC = () => {
+  return (
+    <div>
+      <button>Create a lobby</button>
+    </div>
+  )
+}
+
 const Home: React.FC = () => {
   const [username, setUsername] = useState('');
-  const [lobbyId, setLobbyId] = useState('');
 
   return (
     <>
@@ -20,18 +27,7 @@ const Home: React.FC = () => {
           />
         </label>
         <br />
-        <button type='button'>Create lobby</button>
-        or
-        <label htmlFor='lobyId'>
-          <button type='button'>Join an existing lobby</button>
-          <input
-            type='text'
-            placeholder='Lobby Id'
-            id="lobbyId"
-            value={lobbyId}
-            onChange={e => setLobbyId(e.target.value)}
-          />
-        </label>
+        <button type='submit'>Login</button>
       </form>
     </>
   )
