@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
-const Lobbies: React.FC = () => {
+const Lobbies: React.FC = ({ onCreateLobby }: { onCreateLobby: () => void }) => {
   return (
     <div>
-      <button>Create a lobby</button>
+      <button onClick={() => onCreateLobby()}>Create a lobby</button>
     </div>
   )
 }
