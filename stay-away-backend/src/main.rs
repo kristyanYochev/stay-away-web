@@ -1,3 +1,5 @@
+mod lobby;
+
 use warp::{self, Filter};
 use futures_util::{StreamExt, FutureExt};
 
