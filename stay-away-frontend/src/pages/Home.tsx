@@ -42,6 +42,10 @@ const Home: React.FC = () => {
     setLoggedIn(true);
   }
 
+  const onJoinLobby = (lobbyId: string) => {
+    console.log('Joining lobby ' + lobbyId);
+  }
+
   return (
     <>
       <h1>Home Page</h1>
@@ -60,7 +64,7 @@ const Home: React.FC = () => {
         </label>
         <br />
         <button type='submit'>Login</button>
-        {loggedIn && <Lobbies />}
+        {loggedIn && <Lobbies onJoinLobby={onJoinLobby}/>}
       </form>
     </>
   )
