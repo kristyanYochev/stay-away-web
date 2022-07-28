@@ -21,6 +21,16 @@ const Home: React.FC = () => {
     setLoggedIn(true);
   }
 
+  const onCreateLobby = async () => {
+    const response = await fetch("http://localhost:8080/lobbies", {
+      method: "POST"
+    });
+
+    const id = await response.text();
+
+    console.log("Created lobby with id " + id);
+  }
+
   return (
     <>
       <h1>Home Page</h1>
@@ -39,7 +49,7 @@ const Home: React.FC = () => {
         </label>
         <br />
         <button type='submit'>Login</button>
-        {loggedIn && <Lobbies />}
+        {loggedIn && <Lobbies onCreateLobby={onCreateLobby} />}
       </form>
     </>
   )
