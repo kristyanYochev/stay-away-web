@@ -30,7 +30,12 @@ async fn main() {
         .and(lobbies)
         .and_then(handle_create_lobby);
 
-    let routes = ws_echo.or(create_lobby);
+    let routes = ws_echo.or(create_lobby)
+        .with(warp::cors()
+            .allow_any_origin()
+            .allow_headers(vec!["*"])
+            .allow_methods(vec!["GET", "POST"])
+        );
 
     warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
 }
