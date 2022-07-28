@@ -5,9 +5,18 @@ interface LobbiesProps {
 }
 
 const Lobbies: React.FC<LobbiesProps> = ({ onCreateLobby = () => {} }) => {
+  const [lobbyId, setLobbyId] = useState('');
+
   return (
     <div>
       <button onClick={() => onCreateLobby()}>Create a lobby</button>
+      <input
+        type='text'
+        placeholder='Lobby Id'
+        value={lobbyId}
+        onChange={e => setLobbyId(e.target.value)}
+      />
+      <button onClick={() => {}}>Join Lobby</button>
     </div>
   )
 }
@@ -22,13 +31,13 @@ const Home: React.FC = () => {
   }
 
   const onCreateLobby = async () => {
-    const response = await fetch("http://localhost:8080/lobbies", {
-      method: "POST"
+    const response = await fetch('http://localhost:8080/lobbies', {
+      method: 'POST'
     });
 
     const id = await response.text();
 
-    console.log("Created lobby with id " + id);
+    console.log('Created lobby with id ' + id);
   }
 
   return (
