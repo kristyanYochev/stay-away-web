@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
 
 interface LobbiesProps {
-  onCreateLobby?: () => void
+  onJoinLobby?: (lobbyId: string) => void
 }
 
-const Lobbies: React.FC<LobbiesProps> = ({ onCreateLobby = () => {} }) => {
+const Lobbies: React.FC<LobbiesProps> = ({ onJoinLobby = () => {} }) => {
   const [lobbyId, setLobbyId] = useState('');
+
+  const onCreateLobby = async () => {
+    const response = await fetch('http://localhost:8080/lobbies', {
+      method: 'POST'
+    });
+
+    const id = await response.text();
+
+    console.log('Created lobby with id ' + id);
+
+    setLobbyId(id);
+  }
 
   return (
     <div>
-      <button onClick={() => onCreateLobby()}>Create a lobby</button>
+      <button onClick={onCreateLobby}>Create a lobby</button>
       <input
         type='text'
         placeholder='Lobby Id'
         value={lobbyId}
         onChange={e => setLobbyId(e.target.value)}
       />
-      <button onClick={() => {}}>Join Lobby</button>
+      <button onClick={() => onJoinLobby(lobbyId)}>Join Lobby</button>
     </div>
   )
 }
@@ -28,16 +40,6 @@ const Home: React.FC = () => {
   const onLogin: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
     setLoggedIn(true);
-  }
-
-  const onCreateLobby = async () => {
-    const response = await fetch('http://localhost:8080/lobbies', {
-      method: 'POST'
-    });
-
-    const id = await response.text();
-
-    console.log('Created lobby with id ' + id);
   }
 
   return (
@@ -58,7 +60,7 @@ const Home: React.FC = () => {
         </label>
         <br />
         <button type='submit'>Login</button>
-        {loggedIn && <Lobbies onCreateLobby={onCreateLobby} />}
+        {loggedIn && <Lobbies />}
       </form>
     </>
   )
