@@ -6,7 +6,7 @@ use rand::Rng;
 
 pub struct Lobby;
 
-pub type Lobbies = Arc<RwLock<HashMap<String, Lobby>>>;
+pub type Lobbies = Arc<RwLock<HashMap<String, RwLock<Lobby>>>>;
 
 impl Lobby {
   pub fn new() -> Self {
