@@ -10,7 +10,6 @@ use futures_util::{StreamExt, FutureExt};
 #[tokio::main]
 async fn main() {
     let lobbies = Lobbies::default();
-    let lobbies = warp::any().map(move || lobbies.clone());
 
     let ws_echo = warp::path("echo")
         .and(warp::ws())
@@ -28,7 +27,7 @@ async fn main() {
     let create_lobby = warp::path("lobbies")
         .and(warp::path::end())
         .and(warp::post())
-        .and(lobbies)
+        .and(with_lobbies(lobbies))
         .and_then(handle_create_lobby);
 
     let routes = ws_echo.or(create_lobby)
@@ -39,6 +38,10 @@ async fn main() {
         );
 
     warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
+}
+
+fn with_lobbies(lobbies: Lobbies) -> impl Filter<Extract = (Lobbies,), Error = Infallible> + Clone {
+    warp::any().map(move || lobbies.clone())
 }
 
 async fn handle_create_lobby(lobbies: Lobbies) -> Result<impl warp::Reply, Infallible> {
