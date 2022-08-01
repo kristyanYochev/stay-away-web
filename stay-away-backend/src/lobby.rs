@@ -9,11 +9,13 @@ pub struct Lobby {
   id: String
 }
 
-pub type Lobbies = Arc<RwLock<HashMap<String, Sender<LobbyCommand>>>>;
+pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
+pub type LobbyHandle = Sender<LobbyCommand>;
 
 #[derive(Debug)]
 pub enum LobbyCommand {
-  UserConnected
+  UserConnected,
+  UserMessage(String)
 }
 
 impl Lobby {
@@ -22,8 +24,13 @@ impl Lobby {
   }
 
   pub async fn manage(self, mut rx: Receiver<LobbyCommand>) {
+    use LobbyCommand::*;
+
     while let Some(command) = rx.recv().await {
-      println!("Received Lobby command: {:?}", command);
+      match command {
+        UserConnected => println!("User has connected!"),
+        UserMessage(msg) => println!("User sent message: {}", msg),
+      }
     }
   }
 }
