@@ -3,7 +3,7 @@ mod lobby;
 use std::convert::Infallible;
 
 use lobby::{Lobbies, Lobby};
-use tokio::sync::RwLock;
+use tokio::sync::mpsc;
 use warp::{self, Filter};
 use futures_util::{StreamExt, FutureExt};
 
@@ -47,7 +47,15 @@ fn with_lobbies(lobbies: Lobbies) -> impl Filter<Extract = (Lobbies,), Error = I
 async fn handle_create_lobby(lobbies: Lobbies) -> Result<impl warp::Reply, Infallible> {
     let id = lobby::generate_id(&lobbies).await;
 
-    lobbies.write().await.insert(id.clone(), RwLock::new(Lobby::new()));
+    let lobby = Lobby::new(id.clone());
+
+    let (tx, rx) = mpsc::channel(32);
+
+    tokio::spawn(async move {
+        lobby.manage(rx).await;
+    });
+
+    lobbies.write().await.insert(id.clone(), tx.clone());
 
     Ok(id)
 }
