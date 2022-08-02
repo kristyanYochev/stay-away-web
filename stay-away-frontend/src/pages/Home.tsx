@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const Home: React.FC = () => {
   const [lobbyId, setLobbyId] = useState('');
+  const [lobbyCreated, setLobbyCreated] = useState(false);
 
   const onCreateLobby = async () => {
     const response = await fetch('http://localhost:8080/lobbies', {
@@ -13,6 +14,7 @@ const Home: React.FC = () => {
     console.log('Created lobby with id ' + id);
 
     setLobbyId(id);
+    setLobbyCreated(true);
   }
 
   return (
@@ -23,6 +25,7 @@ const Home: React.FC = () => {
         placeholder='Lobby Id'
         value={lobbyId}
         onChange={e => setLobbyId(e.target.value)}
+        disabled={lobbyCreated}
       />
       <button onClick={() => {}}>Join Lobby</button>
     </div>
