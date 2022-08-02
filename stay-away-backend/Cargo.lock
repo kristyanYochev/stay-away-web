@@ -717,6 +717,7 @@ name = "stay-away-backend"
 version = "0.1.0"
 dependencies = [
  "futures-util",
+ "rand",
  "tokio",
  "warp",
 ]
