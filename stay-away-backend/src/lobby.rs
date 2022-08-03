@@ -26,7 +26,7 @@ impl Lobby {
         }
     }
 
-    pub async fn manage(self, mut rx: Receiver<LobbyCommand>) {
+    pub async fn manage(mut self, mut rx: Receiver<LobbyCommand>) {
         use LobbyCommand::*;
 
         while let Some(command) = rx.recv().await {
