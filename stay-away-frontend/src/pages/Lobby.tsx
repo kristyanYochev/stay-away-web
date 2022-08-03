@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const Lobby: React.FC = () => {
   const [username, setUsername] = useState("");
+  const ws = useRef<WebSocket>(null);
 
   const { lobbyId } = useParams();
+
+  useEffect(() => {
+    const socket = new WebSocket(`ws://localhost:8080/lobbies/${lobbyId}`);
+    socket.onmessage = console.log;
+
+    return () => socket.close();
+  }, []);
 
   const joinRoom = () => {
     
