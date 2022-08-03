@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Home: React.FC = () => {
   const [lobbyId, setLobbyId] = useState('');
   const [lobbyCreated, setLobbyCreated] = useState(false);
+  const navigate = useNavigate();
 
   const onCreateLobby = async () => {
     const response = await fetch('http://localhost:8080/lobbies', {
@@ -17,6 +19,10 @@ const Home: React.FC = () => {
     setLobbyCreated(true);
   }
 
+  const onJoinLobby = () => {
+    navigate(`/lobby/${lobbyId}`);
+  }
+
   return (
     <div>
       <button onClick={onCreateLobby}>Create a lobby</button>
@@ -27,7 +33,7 @@ const Home: React.FC = () => {
         onChange={e => setLobbyId(e.target.value)}
         disabled={lobbyCreated}
       />
-      <button onClick={() => {}}>Join Lobby</button>
+      <button onClick={() => onJoinLobby()}>Join Lobby</button>
     </div>
   )
 }
