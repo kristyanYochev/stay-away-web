@@ -6,7 +6,8 @@ use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 pub struct Lobby {
-  id: String
+    id: String,
+    users: Vec<String>,
 }
 
 pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
@@ -14,44 +15,47 @@ pub type LobbyHandle = Sender<LobbyCommand>;
 
 #[derive(Debug)]
 pub enum LobbyCommand {
-  UserConnected,
-  UserMessage(String)
+    Join { username: String },
 }
 
 impl Lobby {
-  pub fn new(id: String) -> Self {
-    Self { id }
-  }
-
-  pub async fn manage(self, mut rx: Receiver<LobbyCommand>) {
-    use LobbyCommand::*;
-
-    while let Some(command) = rx.recv().await {
-      match command {
-        UserConnected => println!("User has connected!"),
-        UserMessage(msg) => println!("User sent message: {}", msg),
-      }
+    pub fn new(id: String) -> Self {
+        Self {
+            id,
+            users: Vec::with_capacity(12),
+        }
     }
-  }
+
+    pub async fn manage(self, mut rx: Receiver<LobbyCommand>) {
+        use LobbyCommand::*;
+
+        while let Some(command) = rx.recv().await {
+            match command {
+                Join { username } => {
+                    self.users.push(username);
+                }
+            }
+        }
+    }
 }
 
 pub async fn generate_id(lobbies: &Lobbies) -> String {
-  let mut id = random_id();
+    let mut id = random_id();
 
-  while lobbies.read().await.contains_key(&id) {
-      id = random_id();
-  }
+    while lobbies.read().await.contains_key(&id) {
+        id = random_id();
+    }
 
-  id
+    id
 }
 
 fn random_id() -> String {
-  use rand::thread_rng;
-  use rand::distributions::Alphanumeric;
+    use rand::distributions::Alphanumeric;
+    use rand::thread_rng;
 
-  thread_rng()
-    .sample_iter(&Alphanumeric)
-    .take(6)
-    .map(char::from)
-    .collect()
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(6)
+        .map(char::from)
+        .collect()
 }
