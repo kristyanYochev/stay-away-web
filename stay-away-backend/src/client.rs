@@ -19,12 +19,12 @@ pub enum ServerEvent {
 pub enum ClientEvent {
     Join {
         username: String
-    }
+    },
 }
 
 pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSocket) {
     let (mut websocket_tx, mut websocket_rx) = socket.split();
-    let (mut tx, mut rx) = mpsc::channel::<ServerEvent>(32);
+    let (tx, mut rx) = mpsc::channel::<ServerEvent>(32);
 
     tokio::spawn(async move {
         while let Some(message) = rx.recv().await {
@@ -39,23 +39,33 @@ pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSock
 
     while let Some(res) = websocket_rx.next().await {
         let message = match res {
-            Ok(msg) => msg.to_str().unwrap().to_string(),
+            Ok(msg) => msg,
             Err(e) => {
                 eprintln!("ws err: {}", e);
                 break;
             }
         };
 
-        let client_event_result = serde_json::from_str::<ClientEvent>(message.as_str());
+        client_message(message, tx.clone(), lobby.clone()).await;
+    }
+}
 
-        match client_event_result {
-            Ok(client_event) => {
-                lobby.send(client_event.generate_lobby_command(tx.clone())).await.unwrap();
-            },
-            Err(e) => {
-                eprintln!("Deserialization error: {}", e);
-                tx.send(ServerEvent::Error).await.unwrap();
-            }
+async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: LobbyHandle) {
+    let message = if let Ok(s) = msg.to_str() {
+        s
+    } else {
+        return;
+    };
+
+    let client_event_result = serde_json::from_str::<ClientEvent>(message);
+
+    match client_event_result {
+        Ok(client_event) => {
+            lobby.send(client_event.generate_lobby_command(my_handle.clone())).await.unwrap();
+        },
+        Err(e) => {
+            eprintln!("Deserialization error: {}", e);
+            my_handle.send(ServerEvent::Error).await.unwrap();
         }
     }
 }
@@ -63,7 +73,8 @@ pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSock
 impl ClientEvent {
     fn generate_lobby_command(self, my_handle: Sender<ServerEvent>) -> LobbyCommand {
         match self {
-            Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle }
+            Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle },
+            _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle } // Dead code to let the thing compile
         }
     }
 }
