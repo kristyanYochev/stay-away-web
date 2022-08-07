@@ -1,13 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
 
+use crate::client::ServerEvent;
+
 pub struct Lobby {
     id: String,
-    users: Vec<String>,
+    users: Vec<User>,
 }
 
 pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
@@ -15,7 +17,10 @@ pub type LobbyHandle = Sender<LobbyCommand>;
 
 #[derive(Debug)]
 pub enum LobbyCommand {
-    Join { username: String },
+    Join {
+        username: String,
+        user_handle: Sender<ServerEvent>
+    },
 }
 
 impl Lobby {
@@ -31,11 +36,28 @@ impl Lobby {
 
         while let Some(command) = rx.recv().await {
             match command {
-                Join { username } => {
-                    self.users.push(username);
+                Join { username, user_handle } => {
+                    self.users.push(User::new(username.clone(), user_handle));
+
+                    for user in &self.users {
+                        user.handle.send(ServerEvent::UserJoined { username: username.clone() }).await.unwrap();
+                    }
                 }
             }
         }
+    }
+}
+
+struct User {
+    username: String,
+    handle: UserHandle,
+}
+
+type UserHandle = Sender<ServerEvent>;
+
+impl User {
+    fn new(username: String, handle: UserHandle) -> Self {
+        Self { username, handle }
     }
 }
 
