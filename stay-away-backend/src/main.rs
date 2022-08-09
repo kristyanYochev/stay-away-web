@@ -1,11 +1,12 @@
 mod lobby;
+mod client;
 
 use std::convert::Infallible;
 
 use lobby::{Lobbies, Lobby, LobbyHandle};
 use tokio::sync::mpsc;
-use warp::{self, Filter, ws::Message};
-use futures_util::{StreamExt, FutureExt, SinkExt, TryFutureExt};
+use warp::{self, Filter};
+use futures_util::{StreamExt, FutureExt};
 
 #[tokio::main]
 async fn main() {
@@ -35,7 +36,7 @@ async fn main() {
         .and_then(with_lobby_handle)
         .and(warp::ws())
         .map(|lobby_handle, ws: warp::ws::Ws| {
-            ws.on_upgrade(move |socket| handle_user_connected(lobby_handle, socket))
+            ws.on_upgrade(move |socket| client::handle_user_connected(lobby_handle, socket))
         });
 
     let routes = ws_echo
@@ -75,27 +76,5 @@ async fn with_lobby_handle(lobby_id: String, lobbies: Lobbies) -> Result<LobbyHa
         Ok(handle.clone())
     } else {
         Err(warp::reject::not_found())
-    }
-}
-
-async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSocket) {
-    lobby.send(lobby::LobbyCommand::UserConnected).await
-        .unwrap_or_else(|e| { eprintln!("mpsc err: {}", e)});
-    let (mut tx, mut rx) = socket.split();
-
-    tx.send(Message::text("Been nice having ya!"))
-        .unwrap_or_else(|e| { eprintln!("ws error: {}", e) }).await;
-
-    while let Some(res) = rx.next().await {
-        let message = match res {
-            Ok(msg) => msg.to_str().unwrap().to_string(),
-            Err(e) => {
-                eprintln!("ws err: {}", e);
-                break;
-            }
-        };
-
-        lobby.send(lobby::LobbyCommand::UserMessage(message))
-            .unwrap_or_else(|e| { eprintln!("mpsc big oof'd {}", e) }).await;
     }
 }

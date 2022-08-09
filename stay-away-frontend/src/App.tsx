@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.css';
 import Home from './pages/Home';
+import Lobby from './pages/Lobby';
 
 function App() {
   const ws = useRef<WebSocket | null>(null);
@@ -20,7 +22,12 @@ function App() {
   }
 
   return (
-    <Home />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/lobby/:lobbyId" element={<Lobby />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
