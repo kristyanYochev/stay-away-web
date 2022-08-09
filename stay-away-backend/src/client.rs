@@ -11,6 +11,9 @@ pub enum ServerEvent {
     UserJoined {
         username: String
     },
+    Welcome {
+        users: Vec<String>,
+    },
     Error,
 }
 
