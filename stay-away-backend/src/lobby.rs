@@ -37,17 +37,15 @@ impl Lobby {
         while let Some(command) = rx.recv().await {
             match command {
                 Join { username, user_handle } => {
-                    user_handle.send(
-                        ServerEvent::Welcome {
-                            users: self.users.iter()
-                                .map(|u| u.username.clone()).collect()
-                        }
-                    ).await.unwrap();
+                    self.users.push(User::new(username.clone(), user_handle.clone()));
 
-                    self.users.push(User::new(username.clone(), user_handle));
+                    let update_event = ServerEvent::UsersUpdated {
+                        users: self.users.iter()
+                            .map(|u| u.username.clone()).collect()
+                    };
 
                     for user in &self.users {
-                        user.handle.send(ServerEvent::UserJoined { username: username.clone() }).await.unwrap();
+                        user.handle.send(update_event.clone()).await.unwrap();
                     }
                 }
             }

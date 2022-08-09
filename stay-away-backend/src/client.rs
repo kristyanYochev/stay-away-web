@@ -5,14 +5,11 @@ use warp::ws::Message;
 
 use crate::lobby::{LobbyHandle, LobbyCommand};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "event", content = "data")]
 pub enum ServerEvent {
-    UserJoined {
-        username: String
-    },
-    Welcome {
-        users: Vec<String>,
+    UsersUpdated {
+        users: Vec<String>
     },
     Error,
 }

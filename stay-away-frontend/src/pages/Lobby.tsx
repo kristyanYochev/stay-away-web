@@ -14,8 +14,8 @@ const Lobby: React.FC = () => {
     socket.onclose = () => console.log(`Socket to ${lobbyId} is closed`);
     socket.onmessage = wsMessage => {
       const message = JSON.parse(wsMessage.data);
-      if (message.event === "UserJoined") {
-        setUsers(users => [...users, message.data.username]);
+      if (message.event === "UsersUpdated") {
+        setUsers(message.data.users);
       }
     };
 
