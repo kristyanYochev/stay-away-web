@@ -1,37 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import useStayAway from "../stayAwayApi";
 
 const Lobby: React.FC = () => {
   const [username, setUsername] = useState("");
   const [users, setUsers] = useState<string[]>([]);
-  const ws = useRef<WebSocket | null>(null);
 
   const { lobbyId } = useParams();
 
+  const stayAway = useStayAway(lobbyId || "");
+
   useEffect(() => {
-    const socket = new WebSocket(`ws://localhost:8080/lobbies/${lobbyId}`);
-    socket.onopen = () => console.log(`Socket opened to ${lobbyId}`);
-    socket.onclose = () => console.log(`Socket to ${lobbyId} is closed`);
-    socket.onmessage = wsMessage => {
-      const message = JSON.parse(wsMessage.data);
-      if (message.event === "UsersUpdated") {
-        setUsers(message.data.users);
-      }
-    };
-
-    ws.current = socket;
-
-    return () => socket.close();
-  }, [lobbyId]);
+    stayAway.on("UsersUpdated", evt => {
+      console.log("Users Updated!");
+      setUsers(evt.users);
+    });
+  }, [])
 
   const joinRoom = () => {
-    console.log(ws.current);
-    ws.current?.send(JSON.stringify({
-      event: "Join",
-      data: {
-        username
-      }
-    }));
+    stayAway.send("Join", {username});
   }
 
   return (
