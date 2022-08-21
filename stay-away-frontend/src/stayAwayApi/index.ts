@@ -16,23 +16,24 @@ interface WebsocketMessage<E extends keyof EventMap> {
 
 export default function useStayAway(lobbyId: string): StayAwayAPI {
   const ws = useRef<WebSocket | null>(null);
-
-  let eventListeners: EventListeners = {
+  let eventListeners = useRef<EventListeners>({
     "Error": [],
     "UsersUpdated": [],
-  };
-
-  const emit = <E extends keyof EventMap>(eventType: E, event: EventMap[E]) => {
-    eventListeners[eventType].forEach(handle => handle(event));
-  }
-
-  const handleWebsocketMessage = <E extends keyof EventMap>(msg: MessageEvent<any>) => {
-    const {event: eventType, data: event} = JSON.parse(msg.data) as WebsocketMessage<E>;
-    emit(eventType, event);
-  }
+  });
 
   useEffect(() => {
     const socket = new WebSocket(`ws://localhost:8080/lobbies/${lobbyId}`);
+
+    const emit = <E extends keyof EventMap>(eventType: E, event: EventMap[E]) => {
+      eventListeners.current[eventType].forEach(handle => handle(event));
+    };
+  
+    const handleWebsocketMessage = <E extends keyof EventMap>(msg: MessageEvent<any>) => {
+      console.log(`Received message: ${msg}`);
+      const {event: eventType, data: event} = JSON.parse(msg.data) as WebsocketMessage<E>;
+      emit(eventType, event);
+    };
+
     socket.onmessage = handleWebsocketMessage;
 
     ws.current = socket;
@@ -41,7 +42,7 @@ export default function useStayAway(lobbyId: string): StayAwayAPI {
   }, [lobbyId]);
 
   const subscribe = <E extends keyof EventMap>(eventType: E, listener: (event: EventMap[E]) => any) => {
-    eventListeners[eventType].push(listener);
+    eventListeners.current[eventType].push(listener);
   }
 
   return {
