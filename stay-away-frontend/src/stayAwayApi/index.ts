@@ -1,12 +1,17 @@
 import { useEffect, useRef } from "react";
 import { ServerEventMap } from "./serverEvents";
+import { ClientEventMap } from "./clientEvents";
 
 type ServerEventType = keyof ServerEventMap;
 type ServerEvent<E extends ServerEventType> = ServerEventMap[E];
 type ServerEventListener<E extends ServerEventType> = (event: ServerEvent<E>) => any;
 
+type ClientEventType = keyof ClientEventMap;
+type ClientEvent<E extends ClientEventType> = ClientEventMap[E];
+
 interface StayAwayAPI {
   on<E extends ServerEventType>(eventType: E, listener: ServerEventListener<E>): void;
+  send<E extends ClientEventType>(eventType: E, event: ClientEvent<E>): Promise<void>;
 }
 
 type EventListeners = {
@@ -33,7 +38,6 @@ export default function useStayAway(lobbyId: string): StayAwayAPI {
     };
   
     const handleWebsocketMessage = <E extends ServerEventType>(msg: MessageEvent<any>) => {
-      console.log(`Received message: ${msg}`);
       const {event: eventType, data: event} = JSON.parse(msg.data) as WebsocketMessage<E>;
       emit(eventType, event);
     };
@@ -49,7 +53,25 @@ export default function useStayAway(lobbyId: string): StayAwayAPI {
     eventListeners.current[eventType].push(listener);
   }
 
+  const send = async <E extends ClientEventType>(eventType: E, event: ClientEvent<E>) => {
+    if (!ws.current) {
+      console.error("No WebSocket");
+      return;
+    }
+
+    if (ws.current.readyState !== ws.current.OPEN) {
+      console.error("Websocket not connected");
+      return;
+    }
+
+    ws.current.send(JSON.stringify({
+      event: eventType,
+      data: event
+    }));
+  }
+
   return {
-    on: subscribe
+    on: subscribe,
+    send
   }
 }
