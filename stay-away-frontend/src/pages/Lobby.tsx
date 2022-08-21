@@ -8,16 +8,20 @@ const Lobby: React.FC = () => {
 
   const { lobbyId } = useParams();
 
-  const ws = useStayAway(lobbyId || "");
+  const stayAway = useStayAway(lobbyId || "");
+
+  useEffect(() => {
+    stayAway.on("UsersUpdated", console.log);
+  }, [])
 
   const joinRoom = () => {
-    console.log(ws);
-    ws?.send(JSON.stringify({
-      event: "Join",
-      data: {
-        username
-      }
-    }));
+    // console.log(ws);
+    // ws?.send(JSON.stringify({
+    //   event: "Join",
+    //   data: {
+    //     username
+    //   }
+    // }));
   }
 
   return (
