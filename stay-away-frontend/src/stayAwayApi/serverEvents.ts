@@ -4,7 +4,7 @@ interface UsersUpdatedEvent {
 
 interface ErrorEvent {}
 
-export interface EventMap {
+export interface ServerEventMap {
   "UsersUpdated": UsersUpdatedEvent;
   "Error": ErrorEvent;
 }
