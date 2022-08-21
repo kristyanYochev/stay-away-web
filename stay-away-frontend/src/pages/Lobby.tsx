@@ -11,17 +11,14 @@ const Lobby: React.FC = () => {
   const stayAway = useStayAway(lobbyId || "");
 
   useEffect(() => {
-    stayAway.on("UsersUpdated", console.log);
+    stayAway.on("UsersUpdated", evt => {
+      console.log("Users Updated!");
+      setUsers(evt.users);
+    });
   }, [])
 
   const joinRoom = () => {
-    // console.log(ws);
-    // ws?.send(JSON.stringify({
-    //   event: "Join",
-    //   data: {
-    //     username
-    //   }
-    // }));
+    stayAway.send("Join", {username});
   }
 
   return (
