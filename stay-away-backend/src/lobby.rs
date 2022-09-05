@@ -7,16 +7,20 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::client::ServerEvent;
 
+/// Represents a single game lobby
 pub struct Lobby {
     id: String,
+    /// A collection of all users currently joined in the lobby
     users: Vec<User>,
 }
 
 pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
 pub type LobbyHandle = Sender<LobbyCommand>;
 
+/// Represents a command that can be sent to the lobby via its handle
 #[derive(Debug)]
 pub enum LobbyCommand {
+    /// A request for a user to join the lobby
     Join {
         username: String,
         user_handle: Sender<ServerEvent>
@@ -24,6 +28,8 @@ pub enum LobbyCommand {
 }
 
 impl Lobby {
+    /// Creates a new Lobby. The users vec has an initial capacity of 12,
+    /// since that is the maximum player count of the original board game.
     pub fn new(id: String) -> Self {
         Self {
             id,
@@ -31,6 +37,7 @@ impl Lobby {
         }
     }
 
+    /// An infinite loop handling all the commands for that lobby.
     pub async fn manage(mut self, mut rx: Receiver<LobbyCommand>) {
         use LobbyCommand::*;
 
