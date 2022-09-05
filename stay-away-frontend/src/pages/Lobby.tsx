@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import useStayAway, { StayAwayProvider } from "../stayAwayApi";
+import { useStayAway, StayAwayProvider } from "../stayAwayApi/index";
 
 const Lobby = () => {
   const { lobbyId } = useParams();
