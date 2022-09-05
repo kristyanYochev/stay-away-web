@@ -1,21 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import useStayAway from "../stayAwayApi";
+import useStayAway, { StayAwayProvider } from "../stayAwayApi";
 
-const Lobby: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [users, setUsers] = useState<string[]>([]);
-
+const Lobby = () => {
   const { lobbyId } = useParams();
 
-  const stayAway = useStayAway(lobbyId || "");
+  if (!lobbyId) {
+    throw new Error("Lobby is undefined");
+  }
 
-  useEffect(() => {
-    stayAway.on("UsersUpdated", evt => {
-      console.log("Users Updated!");
-      setUsers(evt.users);
-    });
-  }, [])
+  return (
+    <StayAwayProvider lobbyId={lobbyId}>
+      <h1>Lobby {lobbyId}</h1>
+      <UserJoin />
+      <br />
+      <UserList />
+    </StayAwayProvider>
+  );
+};
+
+const UserJoin = () => {
+  const [username, setUsername] = useState("");
+
+  const stayAway = useStayAway();
 
   const joinRoom = () => {
     stayAway.send("Join", {username});
@@ -23,23 +30,34 @@ const Lobby: React.FC = () => {
 
   return (
     <>
-      <h1>Lobby {lobbyId}</h1>
       <input
         value={username}
         onChange={e => setUsername(e.target.value)}
         placeholder="Your awesome username"
       />
       <button onClick={joinRoom}>Join Room</button>
-      <br />
-      <ul>
-        {users.map((user, i) => (
-          <li key={i}>
-            {user}
-          </li>
-        ))}
-      </ul>
     </>
-  );
-};
+  )
+}
+
+const UserList = () => {
+  const stayAway = useStayAway();
+  const [users, setUsers] = useState<string[]>([]);
+
+  useEffect(() => {
+    stayAway.on("UsersUpdated", evt => {
+      console.log("Users Updated!");
+      setUsers(evt.users);
+    });
+  }, [stayAway])
+
+  return (
+    <ul>
+      {users.map((user, i) => (
+        <li key={i}>{user}</li>
+      ))}
+    </ul>
+  )
+}
 
 export default Lobby;
