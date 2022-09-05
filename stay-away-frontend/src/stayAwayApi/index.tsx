@@ -1,4 +1,4 @@
-import React, { createContext, PropsWithChildren, ReactNode, useContext, useEffect, useRef } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef } from "react";
 import { ServerEventMap } from "./serverEvents";
 import { ClientEventMap } from "./clientEvents";
 
@@ -87,6 +87,6 @@ export function StayAwayProvider({lobbyId, children}: StayAwayProviderProps) {
   )
 }
 
-export default function useStayAway() {
+export function useStayAway() {
   return useContext(StayAwayContext);
 }
