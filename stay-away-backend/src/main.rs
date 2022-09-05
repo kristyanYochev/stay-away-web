@@ -51,10 +51,14 @@ async fn main() {
     warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
 }
 
+/// Adds the lobbies into the filter chain to be picked up by other filters
 fn with_lobbies(lobbies: Lobbies) -> impl Filter<Extract = (Lobbies,), Error = Infallible> + Clone {
     warp::any().map(move || lobbies.clone())
 }
 
+/// Generates an id using lobby::generate_id, creates a new lobby with that id
+/// and spawns a task to manage the lobby. After spawining the task, the lobby is
+/// added to the lobbies map and the id is returned.
 async fn handle_create_lobby(lobbies: Lobbies) -> Result<impl warp::Reply, Infallible> {
     let id = lobby::generate_id(&lobbies).await;
 
@@ -71,6 +75,8 @@ async fn handle_create_lobby(lobbies: Lobbies) -> Result<impl warp::Reply, Infal
     Ok(id)
 }
 
+/// Takes the lobbies map and resolves with a specific lobby.
+/// Returns an Err() with a not_found rejection if the lobby does not exist.
 async fn with_lobby_handle(lobby_id: String, lobbies: Lobbies) -> Result<LobbyHandle, warp::Rejection> {
     if let Some(handle) = lobbies.read().await.get(&lobby_id) {
         Ok(handle.clone())
