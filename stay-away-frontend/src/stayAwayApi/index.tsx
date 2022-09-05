@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect, useRef } from "react";
+import React, { createContext, PropsWithChildren, ReactNode, useContext, useEffect, useRef } from "react";
 import { ServerEventMap } from "./serverEvents";
 import { ClientEventMap } from "./clientEvents";
 
@@ -30,7 +30,7 @@ const StayAwayContext = createContext<StayAwayAPI>({
 
 interface StayAwayProviderProps {
   lobbyId: string,
-  children: ReactNode
+  children?: ReactNode
 }
 
 export function StayAwayProvider({lobbyId, children}: StayAwayProviderProps) {
