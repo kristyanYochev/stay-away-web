@@ -60,6 +60,7 @@ impl Lobby {
     }
 }
 
+/// A representation of a single user joined in a lobby
 struct User {
     username: String,
     handle: UserHandle,
@@ -68,11 +69,13 @@ struct User {
 type UserHandle = Sender<ServerEvent>;
 
 impl User {
+    /// Creates new user
     fn new(username: String, handle: UserHandle) -> Self {
         Self { username, handle }
     }
 }
 
+/// Generates a unique and random lobby id
 pub async fn generate_id(lobbies: &Lobbies) -> String {
     let mut id = random_id();
 
@@ -83,6 +86,7 @@ pub async fn generate_id(lobbies: &Lobbies) -> String {
     id
 }
 
+/// Generates a random string of 6 alphanumeric characters.
 fn random_id() -> String {
     use rand::distributions::Alphanumeric;
     use rand::thread_rng;
