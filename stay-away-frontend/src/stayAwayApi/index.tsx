@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import React, { createContext, ReactNode, useContext, useEffect, useRef } from "react";
 import { ServerEventMap } from "./serverEvents";
 import { ClientEventMap } from "./clientEvents";
 
@@ -23,7 +23,17 @@ interface WebsocketMessage<E extends ServerEventType> {
   data: ServerEventMap[E],
 }
 
-export default function useStayAway(lobbyId: string): StayAwayAPI {
+const StayAwayContext = createContext<StayAwayAPI>({
+  on: () => {},
+  send: async () => {}
+});
+
+interface StayAwayProviderProps {
+  lobbyId: string,
+  children: ReactNode
+}
+
+export function StayAwayProvider({lobbyId, children}: StayAwayProviderProps) {
   const ws = useRef<WebSocket | null>(null);
   let eventListeners = useRef<EventListeners>({
     "Error": [],
@@ -68,10 +78,15 @@ export default function useStayAway(lobbyId: string): StayAwayAPI {
       event: eventType,
       data: event
     }));
-  }
+  };
 
-  return {
-    on: subscribe,
-    send
-  }
+  return (
+    <StayAwayContext.Provider value={{on: subscribe, send}}>
+      {children}
+    </StayAwayContext.Provider>
+  )
+}
+
+export default function useStayAway() {
+  return useContext(StayAwayContext);
 }
