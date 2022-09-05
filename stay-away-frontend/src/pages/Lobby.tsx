@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import useStayAway from "../stayAwayApi";
 
-const Lobby: React.FC = () => {
+const Lobby = () => {
   const [username, setUsername] = useState("");
   const [users, setUsers] = useState<string[]>([]);
 
   const { lobbyId } = useParams();
 
-  const stayAway = useStayAway(lobbyId || "");
+  const stayAway = useStayAway();
 
   useEffect(() => {
     stayAway.on("UsersUpdated", evt => {
@@ -31,15 +31,19 @@ const Lobby: React.FC = () => {
       />
       <button onClick={joinRoom}>Join Room</button>
       <br />
-      <ul>
-        {users.map((user, i) => (
-          <li key={i}>
-            {user}
-          </li>
-        ))}
-      </ul>
+      <UserList users={users}/>
     </>
   );
 };
+
+const UserList = ({users}: {users: string[]}) => {
+  return (
+    <ul>
+      {users.map((user, i) => (
+        <li key={i}>{user}</li>
+      ))}
+    </ul>
+  )
+}
 
 export default Lobby;
