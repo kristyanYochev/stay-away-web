@@ -23,7 +23,7 @@ pub enum LobbyCommand {
     /// A request for a user to join the lobby
     Join {
         username: String,
-        user_handle: Sender<ServerEvent>
+        user_handle: UserHandle
     },
 }
 
