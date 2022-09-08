@@ -33,6 +33,10 @@ pub enum LobbyCommand {
     AssignId {
         id_channel: oneshot::Sender<UserId>
     },
+
+    Disconnect {
+        user_id: UserId
+    },
 }
 
 impl Lobby {
@@ -76,8 +80,24 @@ impl Lobby {
                         user.handle.send(update_event.clone()).await.unwrap();
                     }
                 },
+
                 AssignId { id_channel } => {
                     id_channel.send(self.generate_user_id()).unwrap();
+                },
+
+                Disconnect { user_id } => {
+                    self.users.remove(&user_id);
+
+                    for (_id, user) in &self.users {
+                        user.handle.send(ServerEvent::UsersUpdated {
+                            users: self.users.iter()
+                                .map(|(id, u)| events::server::User {
+                                    id: *id,
+                                    username: u.username.clone()
+                                }).collect()
+                            }
+                        ).await.unwrap();
+                    }
                 }
             }
         }

@@ -3,7 +3,7 @@ use tokio::sync::mpsc::{self, Sender};
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use crate::lobby::LobbyHandle;
+use crate::lobby::{LobbyHandle, Lobby};
 use crate::events::{server::ServerEvent, client::ClientEvent};
 
 /// Handles the websocket connection. Spawns a task for sending events to the client.
@@ -40,6 +40,8 @@ pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSock
 
         client_message(message, tx.clone(), id, lobby.clone()).await;
     }
+
+    user_disconnect(id, lobby).await;
 }
 
 /// Handler for a message from the client.
@@ -62,4 +64,12 @@ async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, my_id: usi
             my_handle.send(ServerEvent::Error).await.unwrap();
         }
     }
+}
+
+async fn user_disconnect(my_id: usize, lobby: LobbyHandle) {
+    use crate::lobby::LobbyCommand::Disconnect;
+
+    lobby.send(Disconnect { user_id: my_id }).await.unwrap();
+
+    println!("Farewell, {my_id}");
 }
