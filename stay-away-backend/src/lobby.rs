@@ -12,6 +12,7 @@ pub struct Lobby {
     id: String,
     /// A collection of all users currently joined in the lobby
     users: Vec<User>,
+    next_user_id: UserId
 }
 
 pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
@@ -34,6 +35,7 @@ impl Lobby {
         Self {
             id,
             users: Vec::with_capacity(12),
+            next_user_id: 1,
         }
     }
 
@@ -44,7 +46,14 @@ impl Lobby {
         while let Some(command) = rx.recv().await {
             match command {
                 Join { username, user_handle } => {
-                    self.users.push(User::new(username.clone(), user_handle.clone(), self.generate_user_id()));
+                    let new_user_id = self.generate_user_id();
+                    self.users.push(
+                        User::new(
+                            username.clone(),
+                            user_handle.clone(),
+                            new_user_id,
+                        )
+                    );
 
                     let update_event = ServerEvent::UsersUpdated {
                         users: self.users.iter()
@@ -59,8 +68,11 @@ impl Lobby {
         }
     }
 
-    fn generate_user_id(&self) -> UserId {
-        unimplemented!("Add a counter");
+    /// Grabs the next_user_id and increments it for the next call.
+    fn generate_user_id(&mut self) -> UserId {
+        let next_id = self.next_user_id;
+        self.next_user_id += 1;
+        next_id
     }
 }
 
