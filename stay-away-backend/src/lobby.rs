@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -11,7 +11,7 @@ use crate::client::ServerEvent;
 pub struct Lobby {
     id: String,
     /// A collection of all users currently joined in the lobby
-    users: Vec<User>,
+    users: HashMap<UserId, User>,
     next_user_id: UserId
 }
 
@@ -34,7 +34,7 @@ impl Lobby {
     pub fn new(id: String) -> Self {
         Self {
             id,
-            users: Vec::with_capacity(12),
+            users: HashMap::default(),
             next_user_id: 1,
         }
     }
@@ -47,7 +47,8 @@ impl Lobby {
             match command {
                 Join { username, user_handle } => {
                     let new_user_id = self.generate_user_id();
-                    self.users.push(
+                    self.users.insert(
+                        new_user_id,
                         User::new(
                             username.clone(),
                             user_handle.clone(),
@@ -57,10 +58,10 @@ impl Lobby {
 
                     let update_event = ServerEvent::UsersUpdated {
                         users: self.users.iter()
-                            .map(|u| u.username.clone()).collect()
+                            .map(|(_id, u)| u.username.clone()).collect()
                     };
 
-                    for user in &self.users {
+                    for (_id, user) in &self.users {
                         user.handle.send(update_event.clone()).await.unwrap();
                     }
                 }
