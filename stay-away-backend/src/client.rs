@@ -1,31 +1,9 @@
 use futures_util::{StreamExt, SinkExt, TryFutureExt};
 use tokio::sync::mpsc::{self, Sender};
-use serde::{Serialize, Deserialize};
 use warp::ws::Message;
 
-use crate::lobby::{LobbyHandle, LobbyCommand};
-
-/// A representation of events originating from the server.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "event", content = "data")]
-pub enum ServerEvent {
-    /// Fired whenever a user connects. TODO: implement disconnections
-    UsersUpdated {
-        users: Vec<String>
-    },
-    /// Fired when the server encounters an error
-    Error,
-}
-
-/// Represents events originating from the client
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "event", content = "data")]
-pub enum ClientEvent {
-    /// A request for joining the lobby
-    Join {
-        username: String
-    },
-}
+use crate::lobby::LobbyHandle;
+use crate::events::{server::ServerEvent, client::ClientEvent};
 
 /// Handles the websocket connection. Spawns a task for sending events to the client.
 pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSocket) {
@@ -74,16 +52,6 @@ async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: Lob
         Err(e) => {
             eprintln!("Deserialization error: {}", e);
             my_handle.send(ServerEvent::Error).await.unwrap();
-        }
-    }
-}
-
-impl ClientEvent {
-    /// Basically a fancy Into<LobbyCommand>. Not the actual trait, since the handle is needed to generate the LobbyCommand
-    fn generate_lobby_command(self, my_handle: Sender<ServerEvent>) -> LobbyCommand {
-        match self {
-            Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle },
-            _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle } // Dead code to let the thing compile
         }
     }
 }

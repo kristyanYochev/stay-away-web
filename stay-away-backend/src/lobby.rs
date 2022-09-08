@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::client::ServerEvent;
+use crate::events::server::ServerEvent;
 
 /// Represents a single game lobby
 pub struct Lobby {
