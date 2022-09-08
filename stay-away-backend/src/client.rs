@@ -38,13 +38,13 @@ pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSock
             }
         };
 
-        client_message(message, tx.clone(), lobby.clone()).await;
+        client_message(message, tx.clone(), id, lobby.clone()).await;
     }
 }
 
 /// Handler for a message from the client.
 /// Each message is deserialized and, if all goes well, is sent to the lobby.
-async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: LobbyHandle) {
+async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, my_id: usize, lobby: LobbyHandle) {
     let message = if let Ok(s) = msg.to_str() {
         s
     } else {
@@ -55,7 +55,7 @@ async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: Lob
 
     match client_event_result {
         Ok(client_event) => {
-            lobby.send(client_event.generate_lobby_command(my_handle.clone())).await.unwrap();
+            lobby.send(client_event.generate_lobby_command(my_handle.clone(), my_id)).await.unwrap();
         },
         Err(e) => {
             eprintln!("Deserialization error: {}", e);

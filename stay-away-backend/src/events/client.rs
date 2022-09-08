@@ -17,10 +17,10 @@ pub enum ClientEvent {
 
 impl ClientEvent {
   /// Basically a fancy Into<LobbyCommand>. Not the actual trait, since the handle is needed to generate the LobbyCommand
-  pub fn generate_lobby_command(self, my_handle: Sender<ServerEvent>) -> LobbyCommand {
+  pub fn generate_lobby_command(self, my_handle: Sender<ServerEvent>, my_id: usize) -> LobbyCommand {
       match self {
-          Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle },
-          _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle } // Dead code to let the thing compile
+          Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle, user_id: my_id },
+          _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle, user_id: my_id } // Dead code to let the thing compile
       }
   }
 }

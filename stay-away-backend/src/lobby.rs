@@ -24,6 +24,7 @@ pub enum LobbyCommand {
     /// A request for a user to join the lobby
     Join {
         username: String,
+        user_id: UserId,
         user_handle: UserHandle
     },
 
@@ -51,14 +52,13 @@ impl Lobby {
 
         while let Some(command) = rx.recv().await {
             match command {
-                Join { username, user_handle } => {
-                    let new_user_id = self.generate_user_id();
+                Join { username, user_handle, user_id } => {
                     self.users.insert(
-                        new_user_id,
+                        user_id,
                         User::new(
                             username.clone(),
                             user_handle.clone(),
-                            new_user_id,
+                            user_id,
                         )
                     );
 
@@ -70,7 +70,7 @@ impl Lobby {
                             }).collect()
                     };
 
-                    user_handle.send(ServerEvent::Welcome { id: new_user_id }).await.unwrap();
+                    user_handle.send(ServerEvent::Welcome { id: user_id }).await.unwrap();
 
                     for (_id, user) in &self.users {
                         user.handle.send(update_event.clone()).await.unwrap();
