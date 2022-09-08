@@ -1,5 +1,6 @@
 use futures_util::{StreamExt, SinkExt, TryFutureExt};
 use tokio::sync::mpsc::{self, Sender};
+use tokio::sync::oneshot;
 use warp::ws::Message;
 
 use crate::lobby::LobbyHandle;
@@ -7,8 +8,15 @@ use crate::events::{server::ServerEvent, client::ClientEvent};
 
 /// Handles the websocket connection. Spawns a task for sending events to the client.
 pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSocket) {
+    use crate::lobby::LobbyCommand::AssignId;
+
     let (mut websocket_tx, mut websocket_rx) = socket.split();
-    let (tx, mut rx) = mpsc::channel::<ServerEvent>(32);
+    let (tx, mut rx) = mpsc::channel(32);
+
+    let (id_tx, id_rx) = oneshot::channel();
+    lobby.send(AssignId { id_channel: id_tx }).await.unwrap();
+
+    let id = id_rx.await.unwrap();
 
     tokio::spawn(async move {
         while let Some(message) = rx.recv().await {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, oneshot};
 
 use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -25,6 +25,12 @@ pub enum LobbyCommand {
     Join {
         username: String,
         user_handle: UserHandle
+    },
+
+    /// A command to assign an id to the connection.
+    /// Fired as soon as a websocket is opened.
+    AssignId {
+        id_channel: oneshot::Sender<UserId>
     },
 }
 
@@ -69,6 +75,9 @@ impl Lobby {
                     for (_id, user) in &self.users {
                         user.handle.send(update_event.clone()).await.unwrap();
                     }
+                },
+                AssignId { id_channel } => {
+                    id_channel.send(self.generate_user_id()).unwrap();
                 }
             }
         }
