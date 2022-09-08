@@ -44,7 +44,7 @@ impl Lobby {
         while let Some(command) = rx.recv().await {
             match command {
                 Join { username, user_handle } => {
-                    self.users.push(User::new(username.clone(), user_handle.clone()));
+                    self.users.push(User::new(username.clone(), user_handle.clone(), self.generate_user_id()));
 
                     let update_event = ServerEvent::UsersUpdated {
                         users: self.users.iter()
@@ -58,20 +58,26 @@ impl Lobby {
             }
         }
     }
+
+    fn generate_user_id(&self) -> UserId {
+        unimplemented!("Add a counter");
+    }
 }
 
 /// A representation of a single user joined in a lobby
 struct User {
     username: String,
     handle: UserHandle,
+    id: UserId,
 }
 
 type UserHandle = Sender<ServerEvent>;
+type UserId = usize;
 
 impl User {
     /// Creates new user
-    fn new(username: String, handle: UserHandle) -> Self {
-        Self { username, handle }
+    fn new(username: String, handle: UserHandle, id: UserId) -> Self {
+        Self { username, handle, id }
     }
 }
 
