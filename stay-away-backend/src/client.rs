@@ -70,6 +70,4 @@ async fn user_disconnect(my_id: usize, lobby: LobbyHandle) {
     use crate::lobby::LobbyCommand::Disconnect;
 
     lobby.send(Disconnect { user_id: my_id }).await.unwrap();
-
-    println!("Farewell, {my_id}");
 }
