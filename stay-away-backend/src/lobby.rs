@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::events::server::ServerEvent;
+use crate::events::{server::ServerEvent, self};
 
 /// Represents a single game lobby
 pub struct Lobby {
@@ -58,7 +58,10 @@ impl Lobby {
 
                     let update_event = ServerEvent::UsersUpdated {
                         users: self.users.iter()
-                            .map(|(_id, u)| u.username.clone()).collect()
+                            .map(|(id, u)| events::server::User {
+                                id: *id,
+                                username: u.username.clone()
+                            }).collect()
                     };
 
                     for (_id, user) in &self.users {
