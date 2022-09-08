@@ -9,7 +9,6 @@ pub enum ServerEvent {
         users: Vec<User>,
     },
     Welcome {
-        users: Vec<User>,
         id: usize,
     },
     /// Fired when the server encounters an error

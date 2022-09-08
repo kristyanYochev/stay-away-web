@@ -64,6 +64,8 @@ impl Lobby {
                             }).collect()
                     };
 
+                    user_handle.send(ServerEvent::Welcome { id: new_user_id }).await.unwrap();
+
                     for (_id, user) in &self.users {
                         user.handle.send(update_event.clone()).await.unwrap();
                     }
