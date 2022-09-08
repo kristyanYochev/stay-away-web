@@ -1,5 +1,6 @@
 mod lobby;
 mod client;
+mod events;
 
 use std::convert::Infallible;
 

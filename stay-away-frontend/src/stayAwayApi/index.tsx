@@ -38,6 +38,7 @@ export function StayAwayProvider({lobbyId, children}: StayAwayProviderProps) {
   let eventListeners = useRef<EventListeners>({
     "Error": [],
     "UsersUpdated": [],
+    "Welcome": [],
   });
 
   useEffect(() => {

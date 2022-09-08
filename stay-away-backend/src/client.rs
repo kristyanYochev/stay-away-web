@@ -1,36 +1,22 @@
 use futures_util::{StreamExt, SinkExt, TryFutureExt};
 use tokio::sync::mpsc::{self, Sender};
-use serde::{Serialize, Deserialize};
+use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use crate::lobby::{LobbyHandle, LobbyCommand};
-
-/// A representation of events originating from the server.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "event", content = "data")]
-pub enum ServerEvent {
-    /// Fired whenever a user connects. TODO: implement disconnections
-    UsersUpdated {
-        users: Vec<String>
-    },
-    /// Fired when the server encounters an error
-    Error,
-}
-
-/// Represents events originating from the client
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "event", content = "data")]
-pub enum ClientEvent {
-    /// A request for joining the lobby
-    Join {
-        username: String
-    },
-}
+use crate::lobby::{LobbyHandle, Lobby};
+use crate::events::{server::ServerEvent, client::ClientEvent};
 
 /// Handles the websocket connection. Spawns a task for sending events to the client.
 pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSocket) {
+    use crate::lobby::LobbyCommand::AssignId;
+
     let (mut websocket_tx, mut websocket_rx) = socket.split();
-    let (tx, mut rx) = mpsc::channel::<ServerEvent>(32);
+    let (tx, mut rx) = mpsc::channel(32);
+
+    let (id_tx, id_rx) = oneshot::channel();
+    lobby.send(AssignId { id_channel: id_tx }).await.unwrap();
+
+    let id = id_rx.await.unwrap();
 
     tokio::spawn(async move {
         while let Some(message) = rx.recv().await {
@@ -52,13 +38,15 @@ pub async fn handle_user_connected(lobby: LobbyHandle, socket: warp::ws::WebSock
             }
         };
 
-        client_message(message, tx.clone(), lobby.clone()).await;
+        client_message(message, tx.clone(), id, lobby.clone()).await;
     }
+
+    user_disconnect(id, lobby).await;
 }
 
 /// Handler for a message from the client.
 /// Each message is deserialized and, if all goes well, is sent to the lobby.
-async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: LobbyHandle) {
+async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, my_id: usize, lobby: LobbyHandle) {
     let message = if let Ok(s) = msg.to_str() {
         s
     } else {
@@ -69,7 +57,7 @@ async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: Lob
 
     match client_event_result {
         Ok(client_event) => {
-            lobby.send(client_event.generate_lobby_command(my_handle.clone())).await.unwrap();
+            lobby.send(client_event.generate_lobby_command(my_handle.clone(), my_id)).await.unwrap();
         },
         Err(e) => {
             eprintln!("Deserialization error: {}", e);
@@ -78,12 +66,8 @@ async fn client_message(msg: Message, my_handle: Sender<ServerEvent>, lobby: Lob
     }
 }
 
-impl ClientEvent {
-    /// Basically a fancy Into<LobbyCommand>. Not the actual trait, since the handle is needed to generate the LobbyCommand
-    fn generate_lobby_command(self, my_handle: Sender<ServerEvent>) -> LobbyCommand {
-        match self {
-            Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle },
-            _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle } // Dead code to let the thing compile
-        }
-    }
+async fn user_disconnect(my_id: usize, lobby: LobbyHandle) {
+    use crate::lobby::LobbyCommand::Disconnect;
+
+    lobby.send(Disconnect { user_id: my_id }).await.unwrap();
 }

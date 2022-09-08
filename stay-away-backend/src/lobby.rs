@@ -1,17 +1,18 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, oneshot};
 
 use rand::Rng;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::client::ServerEvent;
+use crate::events::{server::ServerEvent, self};
 
 /// Represents a single game lobby
 pub struct Lobby {
     id: String,
     /// A collection of all users currently joined in the lobby
-    users: Vec<User>,
+    users: HashMap<UserId, User>,
+    next_user_id: UserId
 }
 
 pub type Lobbies = Arc<RwLock<HashMap<String, LobbyHandle>>>;
@@ -23,7 +24,18 @@ pub enum LobbyCommand {
     /// A request for a user to join the lobby
     Join {
         username: String,
-        user_handle: Sender<ServerEvent>
+        user_id: UserId,
+        user_handle: UserHandle
+    },
+
+    /// A command to assign an id to the connection.
+    /// Fired as soon as a websocket is opened.
+    AssignId {
+        id_channel: oneshot::Sender<UserId>
+    },
+
+    Disconnect {
+        user_id: UserId
     },
 }
 
@@ -33,7 +45,8 @@ impl Lobby {
     pub fn new(id: String) -> Self {
         Self {
             id,
-            users: Vec::with_capacity(12),
+            users: HashMap::default(),
+            next_user_id: 1,
         }
     }
 
@@ -43,20 +56,58 @@ impl Lobby {
 
         while let Some(command) = rx.recv().await {
             match command {
-                Join { username, user_handle } => {
-                    self.users.push(User::new(username.clone(), user_handle.clone()));
+                Join { username, user_handle, user_id } => {
+                    self.users.insert(
+                        user_id,
+                        User::new(
+                            username.clone(),
+                            user_handle.clone(),
+                            user_id,
+                        )
+                    );
 
                     let update_event = ServerEvent::UsersUpdated {
                         users: self.users.iter()
-                            .map(|u| u.username.clone()).collect()
+                            .map(|(id, u)| events::server::User {
+                                id: *id,
+                                username: u.username.clone()
+                            }).collect()
                     };
 
-                    for user in &self.users {
+                    user_handle.send(ServerEvent::Welcome { id: user_id }).await.unwrap();
+
+                    for (_id, user) in &self.users {
                         user.handle.send(update_event.clone()).await.unwrap();
+                    }
+                },
+
+                AssignId { id_channel } => {
+                    id_channel.send(self.generate_user_id()).unwrap();
+                },
+
+                Disconnect { user_id } => {
+                    self.users.remove(&user_id);
+
+                    for (_id, user) in &self.users {
+                        user.handle.send(ServerEvent::UsersUpdated {
+                            users: self.users.iter()
+                                .map(|(id, u)| events::server::User {
+                                    id: *id,
+                                    username: u.username.clone()
+                                }).collect()
+                            }
+                        ).await.unwrap();
                     }
                 }
             }
         }
+    }
+
+    /// Grabs the next_user_id and increments it for the next call.
+    fn generate_user_id(&mut self) -> UserId {
+        let next_id = self.next_user_id;
+        self.next_user_id += 1;
+        next_id
     }
 }
 
@@ -64,14 +115,16 @@ impl Lobby {
 struct User {
     username: String,
     handle: UserHandle,
+    id: UserId,
 }
 
 type UserHandle = Sender<ServerEvent>;
+type UserId = usize;
 
 impl User {
     /// Creates new user
-    fn new(username: String, handle: UserHandle) -> Self {
-        Self { username, handle }
+    fn new(username: String, handle: UserHandle, id: UserId) -> Self {
+        Self { username, handle, id }
     }
 }
 

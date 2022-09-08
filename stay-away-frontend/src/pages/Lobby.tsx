@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useStayAway, StayAwayProvider } from "../stayAwayApi/index";
+import { User } from "../stayAwayApi/serverEvents";
 
 const Lobby = () => {
   const { lobbyId } = useParams();
@@ -28,6 +29,12 @@ const UserJoin = () => {
     stayAway.send("Join", {username});
   }
 
+  useEffect(() => {
+    stayAway.on("Welcome", ({ id }) => {
+      console.log(`My id is: ${id}`);
+    });
+  }, [stayAway]);
+
   return (
     <>
       <input
@@ -42,7 +49,7 @@ const UserJoin = () => {
 
 const UserList = () => {
   const stayAway = useStayAway();
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     stayAway.on("UsersUpdated", evt => {
@@ -53,8 +60,8 @@ const UserList = () => {
 
   return (
     <ul>
-      {users.map((user, i) => (
-        <li key={i}>{user}</li>
+      {users.map((user) => (
+        <li key={user.id}>{user.username}</li>
       ))}
     </ul>
   )
