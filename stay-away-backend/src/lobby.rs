@@ -34,9 +34,13 @@ pub enum LobbyCommand {
         id_channel: oneshot::Sender<UserId>
     },
 
+    /// A signal that a user has disconnected
     Disconnect {
         user_id: UserId
     },
+
+    /// A signal to start the game
+    StartGame,
 }
 
 impl Lobby {
