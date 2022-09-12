@@ -16,6 +16,7 @@ const Lobby = () => {
       <UserJoin />
       <br />
       <UserList />
+      <StartGameButton />
     </StayAwayProvider>
   );
 };
@@ -64,6 +65,24 @@ const UserList = () => {
         <li key={user.id}>{user.username}</li>
       ))}
     </ul>
+  )
+}
+
+const StartGameButton = () => {
+  const stayAway = useStayAway();
+
+  useEffect(() => {
+    stayAway.on("StartGame", () => {
+      alert("Game Starts");
+    });
+  }, [stayAway]);
+
+  const startGame = () => {
+    stayAway.send("StartGame", {});
+  }
+
+  return (
+    <button onClick={startGame}>Start Game</button>
   )
 }
 

@@ -11,6 +11,7 @@ pub enum ServerEvent {
     Welcome {
         id: usize,
     },
+    StartGame,
     /// Fired when the server encounters an error
     Error,
 }

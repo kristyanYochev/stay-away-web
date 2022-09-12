@@ -34,9 +34,13 @@ pub enum LobbyCommand {
         id_channel: oneshot::Sender<UserId>
     },
 
+    /// A signal that a user has disconnected
     Disconnect {
         user_id: UserId
     },
+
+    /// A signal to start the game
+    StartGame,
 }
 
 impl Lobby {
@@ -66,19 +70,9 @@ impl Lobby {
                         )
                     );
 
-                    let update_event = ServerEvent::UsersUpdated {
-                        users: self.users.iter()
-                            .map(|(id, u)| events::server::User {
-                                id: *id,
-                                username: u.username.clone()
-                            }).collect()
-                    };
-
                     user_handle.send(ServerEvent::Welcome { id: user_id }).await.unwrap();
 
-                    for (_id, user) in &self.users {
-                        user.handle.send(update_event.clone()).await.unwrap();
-                    }
+                    self.notify_user_list_update().await;
                 },
 
                 AssignId { id_channel } => {
@@ -88,18 +82,34 @@ impl Lobby {
                 Disconnect { user_id } => {
                     self.users.remove(&user_id);
 
-                    for (_id, user) in &self.users {
-                        user.handle.send(ServerEvent::UsersUpdated {
-                            users: self.users.iter()
-                                .map(|(id, u)| events::server::User {
-                                    id: *id,
-                                    username: u.username.clone()
-                                }).collect()
-                            }
-                        ).await.unwrap();
+                    self.notify_user_list_update().await;
+                },
+
+                StartGame => {
+                    let num_users = self.users.len();
+                    if num_users >= 4 && num_users <= 12 {
+                        self.broadcast(ServerEvent::StartGame).await;
                     }
                 }
             }
+        }
+    }
+
+    async fn notify_user_list_update(&self) {
+        let update_event = ServerEvent::UsersUpdated {
+            users: self.users.iter()
+                .map(|(id, u)| events::server::User {
+                    id: *id,
+                    username: u.username.clone()
+                }).collect()
+        };
+
+        self.broadcast(update_event).await;
+    }
+
+    async fn broadcast(&self, event: ServerEvent) {
+        for (_id, user) in &self.users {
+            user.handle.send(event.clone()).await.unwrap();
         }
     }
 

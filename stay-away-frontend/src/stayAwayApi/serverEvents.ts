@@ -13,8 +13,11 @@ interface WelcomeEvent {
   id: number;
 }
 
+interface StartGameEvent {}
+
 export interface ServerEventMap {
   "UsersUpdated": UsersUpdatedEvent;
   "Error": ErrorEvent;
   "Welcome": WelcomeEvent;
+  "StartGame": StartGameEvent;
 }

@@ -39,6 +39,7 @@ export function StayAwayProvider({lobbyId, children}: StayAwayProviderProps) {
     "Error": [],
     "UsersUpdated": [],
     "Welcome": [],
+    "StartGame": [],
   });
 
   useEffect(() => {
