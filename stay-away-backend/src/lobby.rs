@@ -66,19 +66,9 @@ impl Lobby {
                         )
                     );
 
-                    let update_event = ServerEvent::UsersUpdated {
-                        users: self.users.iter()
-                            .map(|(id, u)| events::server::User {
-                                id: *id,
-                                username: u.username.clone()
-                            }).collect()
-                    };
-
                     user_handle.send(ServerEvent::Welcome { id: user_id }).await.unwrap();
 
-                    for (_id, user) in &self.users {
-                        user.handle.send(update_event.clone()).await.unwrap();
-                    }
+                    self.notify_user_list_update().await;
                 },
 
                 AssignId { id_channel } => {
@@ -88,18 +78,23 @@ impl Lobby {
                 Disconnect { user_id } => {
                     self.users.remove(&user_id);
 
-                    for (_id, user) in &self.users {
-                        user.handle.send(ServerEvent::UsersUpdated {
-                            users: self.users.iter()
-                                .map(|(id, u)| events::server::User {
-                                    id: *id,
-                                    username: u.username.clone()
-                                }).collect()
-                            }
-                        ).await.unwrap();
-                    }
+                    self.notify_user_list_update().await;
                 }
             }
+        }
+    }
+
+    async fn notify_user_list_update(&self) {
+        let update_event = ServerEvent::UsersUpdated {
+            users: self.users.iter()
+                .map(|(id, u)| events::server::User {
+                    id: *id,
+                    username: u.username.clone()
+                }).collect()
+        };
+
+        for (_id, user) in &self.users {
+            user.handle.send(update_event.clone()).await.unwrap();
         }
     }
 
