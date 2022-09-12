@@ -13,6 +13,7 @@ pub enum ClientEvent {
     Join {
         username: String
     },
+    StartGame,
 }
 
 impl ClientEvent {
@@ -20,7 +21,7 @@ impl ClientEvent {
   pub fn generate_lobby_command(self, my_handle: Sender<ServerEvent>, my_id: usize) -> LobbyCommand {
       match self {
           Self::Join { username } => LobbyCommand::Join { username, user_handle: my_handle, user_id: my_id },
-          _ => LobbyCommand::Join { username: "".to_string(), user_handle: my_handle, user_id: my_id } // Dead code to let the thing compile
+          Self::StartGame => LobbyCommand::StartGame
       }
   }
 }
