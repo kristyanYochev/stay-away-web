@@ -160,3 +160,67 @@ fn random_id() -> String {
         .map(char::from)
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use tokio::{sync::{mpsc, oneshot}, task::JoinHandle};
+
+    use crate::events::server::ServerEvent;
+
+    use super::{LobbyHandle, Lobby};
+
+    fn start_lobby() -> (LobbyHandle, JoinHandle<()>) {
+        let lobby = Lobby::new("aaaaaa".to_string());
+        let (tx, rx) = mpsc::channel(32);
+        (tx, tokio::spawn(lobby.manage(rx)))
+    }
+
+    async fn teardown(lobby: LobbyHandle, join_handle: JoinHandle<()>) {
+        drop(lobby);
+        tokio::join!(join_handle).0.unwrap();
+    }
+
+    async fn get_id(lobby: LobbyHandle) -> usize {
+        let (id_tx, id_rx) = oneshot::channel();
+        lobby.send(super::LobbyCommand::AssignId { id_channel: id_tx }).await.unwrap();
+        id_rx.await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn lobby_assigns_consecutive_ids() {
+        let (lobby, join_handle) = start_lobby();
+
+        let id1 = get_id(lobby.clone()).await;
+        let id2 = get_id(lobby.clone()).await;
+
+        assert!(id1 < id2);
+        assert!(id2 - id1 == 1);
+
+        teardown(lobby, join_handle).await;
+    }
+
+    #[tokio::test]
+    async fn lobby_sends_welcome_message_to_joined_client() {
+        let (lobby, join_handle) = start_lobby();
+
+        let my_id = get_id(lobby.clone()).await;
+
+        let (my_tx, mut my_rx) = mpsc::channel(32);
+
+        lobby.send(super::LobbyCommand::Join {
+            username: "test".to_string(),
+            user_id: my_id,
+            user_handle: my_tx.clone()
+        }).await.unwrap();
+
+        let received_message = my_rx.blocking_recv().unwrap();
+
+        if let ServerEvent::Welcome { id: received_id } = received_message {
+            assert!(received_id == my_id);
+        } else {
+            assert!(false);
+        }
+
+        teardown(lobby, join_handle).await;
+    }
+}
