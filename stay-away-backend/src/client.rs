@@ -3,7 +3,7 @@ use tokio::sync::mpsc::{self, Sender};
 use tokio::sync::oneshot;
 use warp::ws::Message;
 
-use crate::lobby::{LobbyHandle, Lobby};
+use crate::lobby::{LobbyHandle};
 use crate::events::{server::ServerEvent, client::ClientEvent};
 
 /// Handles the websocket connection. Spawns a task for sending events to the client.
