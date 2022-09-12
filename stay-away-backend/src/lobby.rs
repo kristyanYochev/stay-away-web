@@ -83,6 +83,13 @@ impl Lobby {
                     self.users.remove(&user_id);
 
                     self.notify_user_list_update().await;
+                },
+
+                StartGame => {
+                    let num_users = self.users.len();
+                    if num_users >= 4 && num_users <= 12 {
+                        println!("Start game!");
+                    }
                 }
             }
         }
