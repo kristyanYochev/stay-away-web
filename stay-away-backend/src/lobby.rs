@@ -88,7 +88,7 @@ impl Lobby {
                 StartGame => {
                     let num_users = self.users.len();
                     if num_users >= 4 && num_users <= 12 {
-                        println!("Start game!");
+                        self.broadcast(ServerEvent::StartGame).await;
                     }
                 }
             }
@@ -104,8 +104,12 @@ impl Lobby {
                 }).collect()
         };
 
+        self.broadcast(update_event).await;
+    }
+
+    async fn broadcast(&self, event: ServerEvent) {
         for (_id, user) in &self.users {
-            user.handle.send(update_event.clone()).await.unwrap();
+            user.handle.send(event.clone()).await.unwrap();
         }
     }
 
